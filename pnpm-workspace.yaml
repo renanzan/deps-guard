@@ -1,0 +1,6 @@
+packages:
+  - examples/*
+  - packages/*
+
+catalog:
+  react: "18"

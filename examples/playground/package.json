@@ -1,0 +1,11 @@
+{
+  "name": "playground",
+  "private": true,
+  "scripts": {
+    "check": "deps-guard"
+  },
+  "devDependencies": {
+    "react": "catalog:",
+    "deps-guard": "workspace:*"
+  }
+}
