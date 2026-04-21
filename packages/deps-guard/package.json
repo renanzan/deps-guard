@@ -8,14 +8,15 @@
   },
   "type": "module",
   "bin": {
-    "deps-guard": "bin/deps-guard.js"
+    "deps-guard": "./bin/deps-guard.js"
   },
   "exports": {
     ".": "./src/index.js"
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "schemas"
   ],
   "scripts": {
     "test": "node --test __tests__/**/*.test.js",

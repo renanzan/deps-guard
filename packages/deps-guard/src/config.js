@@ -1,6 +1,4 @@
 /**
- * config.js
- *
  * Resolve a configuração final do deps-guard mesclando:
  *   1. Valores padrão
  *   2. deps.guard.json (encontrado percorrendo a árvore de diretórios)

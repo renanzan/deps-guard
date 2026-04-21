@@ -1,6 +1,4 @@
 /**
- * orchestrator.js
- *
  * Coordena o fluxo completo do deps-guard:
  *   check → filter → report → (update) → exit
  *
@@ -79,7 +77,10 @@ export async function run(config, cwd) {
   if (!choice || choice === "ignore") {
     console.log("");
     console.log("  Nenhuma atualização realizada.\n");
-    process.exit(exitCode);
+    // O usuário foi informado e escolheu conscientemente ignorar:
+    // sair com 0 para não bloquear o script seguinte (ex: dev, build).
+    // Exit 1 só faz sentido em modo CI/--no-update, onde não há escolha.
+    process.exit(0);
   }
 
   // ------------------------------------------------------------------

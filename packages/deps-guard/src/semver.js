@@ -1,6 +1,4 @@
 /**
- * semver.js
- *
  * Funções puras para comparação de versões semânticas.
  * Sem I/O, sem efeitos colaterais — 100% testável em isolamento.
  */

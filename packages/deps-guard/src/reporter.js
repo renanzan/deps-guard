@@ -1,6 +1,4 @@
 /**
- * reporter.js
- *
  * Toda a saída no terminal fica aqui — Chalk, Clack e Ora.
  * Sem lógica de negócio: apenas recebe dados, renderiza e pergunta.
  */

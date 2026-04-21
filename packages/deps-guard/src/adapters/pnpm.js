@@ -1,6 +1,4 @@
 /**
- * adapters/pnpm.js
- *
  * Executa `pnpm outdated --format json` e normaliza para OutdatedMap.
  *
  * pnpm em modo workspace (`-r`) retorna um array de objetos por workspace:

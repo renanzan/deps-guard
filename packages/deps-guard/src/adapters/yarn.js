@@ -1,6 +1,4 @@
 /**
- * adapters/yarn.js
- *
  * Suporta Yarn Classic (v1) e Yarn Berry (v2+).
  *
  * Yarn Classic — `yarn outdated --json` emite linhas NDJSON onde cada linha

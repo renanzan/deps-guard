@@ -1,6 +1,4 @@
 /**
- * filter.js
- *
  * Funções puras que aplicam as regras de negócio do deps-guard:
  * separar pacotes em critical / regular / ignored e anotar cada
  * um com seu tipo de atualização.

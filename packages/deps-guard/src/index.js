@@ -1,6 +1,4 @@
 /**
- * index.js
- *
  * API pública para uso programático do deps-guard.
  * Permite que outros scripts importem as funções individuais
  * sem passar pelo CLI completo.

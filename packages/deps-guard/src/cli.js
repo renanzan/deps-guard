@@ -1,6 +1,4 @@
 /**
- * cli.js
- *
  * Define o contrato da CLI usando Commander.
  * Faz parse de argv, resolve a configuração final e chama o orchestrator.
  */

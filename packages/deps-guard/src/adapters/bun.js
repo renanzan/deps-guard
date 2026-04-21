@@ -1,6 +1,4 @@
 /**
- * adapters/bun.js
- *
  * Executa `bun outdated` e normaliza para OutdatedMap.
  *
  * A saída do `bun outdated` é uma tabela em texto puro (não JSON):

@@ -1,6 +1,4 @@
 /**
- * updater.js
- *
  * Executa o comando de atualização do package manager detectado.
  * Retorna true em caso de sucesso, false caso contrário.
  */

@@ -1,6 +1,4 @@
 /**
- * adapters/npm.js
- *
  * Executa `npm outdated --json` e normaliza a saída para OutdatedMap.
  *
  * Saída bruta do npm:

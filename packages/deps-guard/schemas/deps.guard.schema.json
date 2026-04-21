@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
+  "title": "deps-guard configuration",
+  "description": "Configuration file for deps-guard — blocks outdated dependencies before running scripts.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Points to the JSON Schema that describes this file."
+    },
+    "critical": {
+      "type": "array",
+      "description": "Packages that trigger exit code 1 when outdated, blocking the pipeline.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Package name as it appears in package.json (e.g. \"react\", \"@types/node\")."
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["react", "react-dom", "next", "typescript"]]
+    },
+    "ignore": {
+      "type": "array",
+      "description": "Packages to silently skip — never shown in the report, never trigger a failure.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Package name as it appears in package.json."
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["zod", "eslint", "prettier"]]
+    },
+    "failOn": {
+      "type": "string",
+      "description": "Controls when deps-guard exits with code 1, blocking the next script in the pipeline.",
+      "enum": ["critical", "any", "never"],
+      "default": "critical",
+      "x-enumDescriptions": {
+        "critical": "Exit 1 only when a package listed in 'critical' is outdated. Recommended for most projects.",
+        "any": "Exit 1 when any outdated package is found (excluding ignored ones). Strictest mode.",
+        "never": "Always exit 0. Useful when you want the report without blocking the pipeline."
+      }
+    },
+    "updateType": {
+      "type": "string",
+      "description": "Minimum semver change type to include in the report. Packages below this threshold are silently ignored.",
+      "enum": ["major", "minor", "patch"],
+      "default": "patch",
+      "x-enumDescriptions": {
+        "patch": "Report all outdated packages (1.0.0 → 1.0.1 and above). Default.",
+        "minor": "Report minor and major updates only — skip patches (1.0.0 → 1.1.0 and above).",
+        "major": "Report major updates only (1.0.0 → 2.0.0 and above)."
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
+      "critical": ["react", "react-dom", "next", "typescript"],
+      "ignore": ["zod", "eslint"],
+      "failOn": "critical",
+      "updateType": "patch"
+    },
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
+      "critical": ["react", "next"],
+      "failOn": "any"
+    },
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
+      "failOn": "never",
+      "updateType": "major"
+    }
+  ]
+}
