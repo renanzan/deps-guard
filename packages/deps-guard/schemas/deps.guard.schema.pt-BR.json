@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.pt-BR.json",
+  "title": "Configuração do deps-guard",
+  "description": "Arquivo de configuração do deps-guard — bloqueia dependências desatualizadas e vulnerabilidades antes de executar scripts.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Aponta para o JSON Schema que descreve este arquivo."
+    },
+    "critical": {
+      "type": "array",
+      "description": "Pacotes que disparam código de saída 1 quando desatualizados, bloqueando o pipeline.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Nome do pacote conforme aparece no package.json (ex: \"react\", \"@types/node\")."
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["react", "react-dom", "next", "typescript"]]
+    },
+    "ignore": {
+      "type": "array",
+      "description": "Pacotes a serem ignorados silenciosamente — nunca aparecem no relatório e nunca causam falha.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["zod", "eslint", "prettier"]]
+    },
+    "failOn": {
+      "type": "string",
+      "description": "Controla quando o deps-guard deve sair com código 1 devido a pacotes desatualizados.",
+      "enum": ["critical", "any", "never"],
+      "default": "critical",
+      "x-enumDescriptions": {
+        "critical": "Sai com código 1 apenas quando um pacote listado em 'critical' estiver desatualizado.",
+        "any": "Sai com código 1 quando qualquer pacote desatualizado for encontrado (exceto os ignorados).",
+        "never": "Sempre sai com código 0. Útil quando você quer o relatório sem bloquear o pipeline."
+      }
+    },
+    "updateType": {
+      "type": "string",
+      "description": "Tipo mínimo de mudança semver para incluir no relatório. Pacotes abaixo desse nível são ignorados silenciosamente.",
+      "enum": ["major", "minor", "patch"],
+      "default": "patch",
+      "x-enumDescriptions": {
+        "patch": "Reporta todos os pacotes desatualizados (1.0.0 → 1.0.1 e acima). Padrão.",
+        "minor": "Reporta apenas atualizações minor e major — ignora patches.",
+        "major": "Reporta apenas atualizações major (1.0.0 → 2.0.0 e acima)."
+      }
+    },
+    "audit": {
+      "type": "boolean",
+      "description": "Ativa a verificação de vulnerabilidades via comando de audit do gerenciador de pacotes (npm audit, pnpm audit, etc.). Requer conexão com a internet. Desativado por padrão para evitar lentidão em execuções frequentes.",
+      "default": false
+    },
+    "auditLevel": {
+      "type": "string",
+      "description": "Nível mínimo de severidade de vulnerabilidade para incluir no relatório. Vulnerabilidades abaixo desse nível são ignoradas silenciosamente.",
+      "enum": ["info", "low", "moderate", "high", "critical"],
+      "default": "high",
+      "x-enumDescriptions": {
+        "info": "Reporta todas as vulnerabilidades.",
+        "low": "Reporta vulnerabilidades de nível baixo ou superior.",
+        "moderate": "Reporta vulnerabilidades de nível moderado ou superior.",
+        "high": "Reporta apenas vulnerabilidades de nível alto e crítico. Padrão.",
+        "critical": "Reporta apenas vulnerabilidades críticas."
+      }
+    },
+    "ignoreAdvisories": {
+      "type": "array",
+      "description": "IDs de advisories a serem ignorados silenciosamente no relatório de vulnerabilidades. Aceita IDs GHSA (ex: GHSA-xxxx-yyyy-zzzz) e CVE (ex: CVE-2023-1234). Comparação não diferencia maiúsculas de minúsculas.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(GHSA-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}|CVE-\\d{4}-\\d+)$",
+        "description": "ID GHSA (GHSA-xxxx-yyyy-zzzz) ou CVE (CVE-2023-1234)."
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["GHSA-jf85-cpcp-j695", "CVE-2023-45133"]]
+    },
+    "auditFailOn": {
+      "type": "string",
+      "description": "Controla quando o deps-guard deve sair com código 1 devido a vulnerabilidades encontradas pelo audit. Independente de 'failOn' (para dependências desatualizadas).",
+      "enum": ["info", "low", "moderate", "high", "critical", "never"],
+      "default": "critical",
+      "x-enumDescriptions": {
+        "info": "Sai com código 1 para qualquer vulnerabilidade em qualquer nível.",
+        "low": "Sai com código 1 para vulnerabilidades de nível baixo ou superior.",
+        "moderate": "Sai com código 1 para vulnerabilidades de nível moderado ou superior.",
+        "high": "Sai com código 1 para vulnerabilidades de nível alto e crítico.",
+        "critical": "Sai com código 1 apenas para vulnerabilidades críticas. Padrão.",
+        "never": "Nunca sai com código 1 devido a vulnerabilidades — apenas relatório."
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.pt-BR.json",
+      "critical": ["react", "react-dom", "next", "typescript"],
+      "ignore": ["zod", "eslint"],
+      "failOn": "critical",
+      "updateType": "patch",
+      "audit": true,
+      "auditLevel": "high",
+      "ignoreAdvisories": [],
+      "auditFailOn": "critical"
+    },
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.pt-BR.json",
+      "critical": ["react", "next"],
+      "audit": true,
+      "auditFailOn": "high"
+    },
+    {
+      "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.pt-BR.json",
+      "failOn": "never",
+      "audit": true,
+      "auditLevel": "moderate",
+      "ignoreAdvisories": ["GHSA-jf85-cpcp-j695"],
+      "auditFailOn": "never"
+    }
+  ]
+}

@@ -4,6 +4,13 @@
  * sem passar pelo CLI completo.
  */
 
+export {
+  filterVulns,
+  groupBySeverity,
+  meetsSeverityThreshold,
+  shouldAuditFail,
+} from "./audit-filter.js";
+export { checkAudit } from "./auditor.js";
 export { checkOutdated } from "./checker.js";
 export { resolveConfig } from "./config.js";
 export { filterPackages, resolveExitCode } from "./filter.js";

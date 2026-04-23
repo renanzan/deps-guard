@@ -3,4 +3,4 @@ packages:
   - packages/*
 
 catalog:
-  react: "18"
+  react: ^19.2.5

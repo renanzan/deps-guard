@@ -1,6 +1,7 @@
 /**
+ * cli.js
+ *
  * Define o contrato da CLI usando Commander.
- * Faz parse de argv, resolve a configuração final e chama o orchestrator.
  */
 
 import { Command } from "commander";
@@ -20,36 +21,47 @@ export async function main() {
       "Bloqueie dependências desatualizadas antes que elas rodem no seu projeto."
     )
     .version(pkg.version, "-v, --version")
-    // Pacotes críticos — disparam exit code 1 quando desatualizados
     .option(
       "-c, --critical <packages>",
       "Pacotes críticos separados por vírgula (ex: react,next,typescript)"
     )
-    // Pacotes a ignorar completamente
     .option(
       "-i, --ignore <packages>",
       "Pacotes a ignorar separados por vírgula (ex: zod,eslint)"
     )
-    // Política de falha
     .option(
       "--fail-on <level>",
       'Quando sair com código 1: "critical" (padrão), "any" ou "never"',
       "critical"
     )
-    // Tipo mínimo de atualização a reportar
     .option(
       "--update-type <type>",
       'Tipo mínimo a reportar: "major", "minor" ou "patch" (padrão)',
       "patch"
     )
-    // Modo não-interativo
+    .option(
+      "--audit",
+      "Ativa verificação de vulnerabilidades (CVEs/GHSA) via audit do package manager"
+    )
+    .option(
+      "--audit-level <level>",
+      'Severidade mínima a reportar: "info", "low", "moderate", "high" (padrão) ou "critical"',
+      "high"
+    )
+    .option(
+      "--ignore-advisories <ids>",
+      "IDs de advisories a ignorar, separados por vírgula (ex: GHSA-xxxx-yyyy-zzzz,CVE-2023-1234)"
+    )
+    .option(
+      "--audit-fail-on <level>",
+      'Quando sair com código 1 por vulnerabilidades: "critical" (padrão), "high", "moderate", "low", "info" ou "never"',
+      "critical"
+    )
     .option(
       "--ci",
       "Modo CI: sem prompts, apenas reportar e sair (detectado via env CI)"
     )
-    // Saída em JSON
     .option("--json", "Imprime o relatório como JSON no stdout")
-    // Pular o prompt de update
     .option("--no-update", "Não oferece atualizar, apenas reporta")
     .addHelpText(
       "after",
@@ -57,18 +69,20 @@ export async function main() {
 Exemplos:
   $ deps-guard
   $ deps-guard --critical react,next --ignore zod
-  $ deps-guard --fail-on any --update-type minor
+  $ deps-guard --audit --audit-level high --audit-fail-on critical
+  $ deps-guard --audit --ignore-advisories GHSA-xxxx-yyyy-zzzz
   $ deps-guard --ci --json
 
-Arquivo de configuração:
-  Crie deps.guard.json na raiz do projeto para persistir as opções.
-  Flags de CLI têm prioridade sobre o arquivo.
-
+Arquivo de configuração (deps.guard.json):
   {
     "critical": ["react", "react-dom", "next"],
     "ignore": ["zod"],
     "failOn": "critical",
-    "updateType": "patch"
+    "updateType": "patch",
+    "audit": true,
+    "auditLevel": "high",
+    "ignoreAdvisories": ["GHSA-xxxx-yyyy-zzzz"],
+    "auditFailOn": "critical"
   }
 `
     );

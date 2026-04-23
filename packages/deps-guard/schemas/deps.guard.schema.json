@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
   "title": "deps-guard configuration",
-  "description": "Configuration file for deps-guard — blocks outdated dependencies before running scripts.",
+  "description": "Configuration file for deps-guard — blocks outdated dependencies and vulnerabilities before running scripts.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -27,8 +27,7 @@
       "description": "Packages to silently skip — never shown in the report, never trigger a failure.",
       "items": {
         "type": "string",
-        "minLength": 1,
-        "description": "Package name as it appears in package.json."
+        "minLength": 1
       },
       "uniqueItems": true,
       "default": [],
@@ -36,12 +35,12 @@
     },
     "failOn": {
       "type": "string",
-      "description": "Controls when deps-guard exits with code 1, blocking the next script in the pipeline.",
+      "description": "Controls when deps-guard exits with code 1 due to outdated packages.",
       "enum": ["critical", "any", "never"],
       "default": "critical",
       "x-enumDescriptions": {
-        "critical": "Exit 1 only when a package listed in 'critical' is outdated. Recommended for most projects.",
-        "any": "Exit 1 when any outdated package is found (excluding ignored ones). Strictest mode.",
+        "critical": "Exit 1 only when a package listed in 'critical' is outdated.",
+        "any": "Exit 1 when any outdated package is found (excluding ignored ones).",
         "never": "Always exit 0. Useful when you want the report without blocking the pipeline."
       }
     },
@@ -52,8 +51,53 @@
       "default": "patch",
       "x-enumDescriptions": {
         "patch": "Report all outdated packages (1.0.0 → 1.0.1 and above). Default.",
-        "minor": "Report minor and major updates only — skip patches (1.0.0 → 1.1.0 and above).",
+        "minor": "Report minor and major updates only — skip patches.",
         "major": "Report major updates only (1.0.0 → 2.0.0 and above)."
+      }
+    },
+    "audit": {
+      "type": "boolean",
+      "description": "Enables vulnerability scanning via the package manager's audit command (npm audit, pnpm audit, etc.). Requires a network connection. Disabled by default to avoid slowing down every predev run.",
+      "default": false
+    },
+    "auditLevel": {
+      "type": "string",
+      "description": "Minimum vulnerability severity to include in the report. Vulnerabilities below this level are silently ignored.",
+      "enum": ["info", "low", "moderate", "high", "critical"],
+      "default": "high",
+      "x-enumDescriptions": {
+        "info": "Report all vulnerabilities.",
+        "low": "Report low severity and above.",
+        "moderate": "Report moderate severity and above.",
+        "high": "Report high and critical only. Default.",
+        "critical": "Report critical vulnerabilities only."
+      }
+    },
+    "ignoreAdvisories": {
+      "type": "array",
+      "description": "Advisory IDs to silently skip in the vulnerability report. Accepts GHSA IDs (e.g. GHSA-xxxx-yyyy-zzzz) and CVE IDs (e.g. CVE-2023-1234). Comparison is case-insensitive.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(GHSA-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}|CVE-\\d{4}-\\d+)$",
+        "description": "GHSA ID (GHSA-xxxx-yyyy-zzzz) or CVE ID (CVE-2023-1234)."
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [["GHSA-jf85-cpcp-j695", "CVE-2023-45133"]]
+    },
+    "auditFailOn": {
+      "type": "string",
+      "description": "Controls when deps-guard exits with code 1 due to vulnerabilities found by audit. Independent of failOn (for outdated packages).",
+      "enum": ["info", "low", "moderate", "high", "critical", "never"],
+      "default": "critical",
+      "x-enumDescriptions": {
+        "info": "Exit 1 for any vulnerability at any severity.",
+        "low": "Exit 1 for low severity and above.",
+        "moderate": "Exit 1 for moderate severity and above.",
+        "high": "Exit 1 for high and critical vulnerabilities.",
+        "critical": "Exit 1 only for critical vulnerabilities. Default.",
+        "never": "Never exit 1 due to vulnerabilities — report only."
       }
     }
   },
@@ -63,17 +107,25 @@
       "critical": ["react", "react-dom", "next", "typescript"],
       "ignore": ["zod", "eslint"],
       "failOn": "critical",
-      "updateType": "patch"
+      "updateType": "patch",
+      "audit": true,
+      "auditLevel": "high",
+      "ignoreAdvisories": [],
+      "auditFailOn": "critical"
     },
     {
       "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
       "critical": ["react", "next"],
-      "failOn": "any"
+      "audit": true,
+      "auditFailOn": "high"
     },
     {
       "$schema": "https://unpkg.com/deps-guard/schemas/deps.guard.schema.json",
       "failOn": "never",
-      "updateType": "major"
+      "audit": true,
+      "auditLevel": "moderate",
+      "ignoreAdvisories": ["GHSA-jf85-cpcp-j695"],
+      "auditFailOn": "never"
     }
   ]
 }

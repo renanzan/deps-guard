@@ -131,3 +131,66 @@ describe("resolveConfig — modo CI", () => {
     process.env.CI = original;
   });
 });
+
+describe("resolveConfig — opções de audit", () => {
+  it("audit desativado por padrão", () => {
+    const config = resolveConfig({}, TMP);
+    assert.equal(config.audit, false);
+  });
+
+  it("--audit ativa o audit", () => {
+    const config = resolveConfig({ audit: true }, TMP);
+    assert.equal(config.audit, true);
+  });
+
+  it("--audit-level é aplicado", () => {
+    const config = resolveConfig({ auditLevel: "critical" }, TMP);
+    assert.equal(config.auditLevel, "critical");
+  });
+
+  it("--ignore-advisories é parseado como lista", () => {
+    const config = resolveConfig(
+      { ignoreAdvisories: "GHSA-aaaa-0000-aaaa,CVE-2023-1234" },
+      TMP
+    );
+    assert.deepEqual(config.ignoreAdvisories, [
+      "GHSA-aaaa-0000-aaaa",
+      "CVE-2023-1234",
+    ]);
+  });
+
+  it("--audit-fail-on é aplicado", () => {
+    const config = resolveConfig({ auditFailOn: "high" }, TMP);
+    assert.equal(config.auditFailOn, "high");
+  });
+
+  it("audit pode ser ativado pelo arquivo de configuração", () => {
+    const dir = join(TMP, "audit-from-file");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "deps.guard.json"),
+      JSON.stringify({
+        audit: true,
+        auditLevel: "moderate",
+        ignoreAdvisories: ["GHSA-test-0000-test"],
+        auditFailOn: "high",
+      })
+    );
+    const config = resolveConfig({}, dir);
+    assert.equal(config.audit, true);
+    assert.equal(config.auditLevel, "moderate");
+    assert.equal(config.auditFailOn, "high");
+    assert.deepEqual(config.ignoreAdvisories, ["GHSA-test-0000-test"]);
+  });
+
+  it("auditLevel inválido no arquivo mantém o default", () => {
+    const dir = join(TMP, "audit-invalid-level");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "deps.guard.json"),
+      JSON.stringify({ auditLevel: "extreme" })
+    );
+    const config = resolveConfig({}, dir);
+    assert.equal(config.auditLevel, "high");
+  });
+});

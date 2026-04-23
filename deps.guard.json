@@ -1,0 +1,10 @@
+{
+  "$schema": "./packages/deps-guard/schemas/deps.guard.schema.pt-BR.json",
+  "critical": ["react", "react-dom", "next", "typescript"],
+  "ignore": [],
+  "failOn": "critical",
+  "updateType": "patch",
+  "audit": true,
+  "auditLevel": "high",
+  "auditFailOn": "low"
+}

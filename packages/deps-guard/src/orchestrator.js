@@ -1,10 +1,14 @@
 /**
+ * orchestrator.js
+ *
  * Coordena o fluxo completo do deps-guard:
- *   check → filter → report → (update) → exit
+ *   check + audit (paralelo) → filter → report → (update) → exit
  *
  * É o único módulo que chama process.exit().
  */
 
+import { filterVulns, shouldAuditFail } from "./audit-filter.js";
+import { checkAudit } from "./auditor.js";
 import { checkOutdated } from "./checker.js";
 import { filterPackages, resolveExitCode } from "./filter.js";
 import {
@@ -23,16 +27,27 @@ import { runUpdate } from "./updater.js";
  */
 export async function run(config, cwd) {
   const spinner = createSpinner();
-
-  // ------------------------------------------------------------------
-  // 1. Verificar dependências
-  // ------------------------------------------------------------------
   spinner.start();
 
+  // ------------------------------------------------------------------
+  // 1. Outdated + audit em paralelo
+  // ------------------------------------------------------------------
   let outdated, pm, root;
+  let auditMap = {},
+    auditWarning = null;
 
   try {
-    ({ outdated, pm, root } = await checkOutdated(cwd));
+    const checks = [checkOutdated(cwd)];
+    if (config.audit) checks.push(checkAudit(cwd));
+
+    const [outdatedResult, auditResult] = await Promise.all(checks);
+
+    ({ outdated, pm, root } = outdatedResult);
+
+    if (auditResult) {
+      auditMap = auditResult.auditMap;
+      auditWarning = auditResult.warning;
+    }
   } catch (err) {
     spinner.fail("Falha ao verificar dependências.");
     renderError(err.message);
@@ -44,26 +59,44 @@ export async function run(config, cwd) {
   // ------------------------------------------------------------------
   // 2. Filtrar e classificar
   // ------------------------------------------------------------------
-  const result = filterPackages(outdated, config);
-  const exitCode = resolveExitCode(result, config.failOn);
+  const depsResult = filterPackages(outdated, config);
+  const auditResult = filterVulns(auditMap, config);
+
+  const depsExitCode = resolveExitCode(depsResult, config.failOn);
+  const auditShouldFail =
+    config.audit && shouldAuditFail(auditResult, config.auditFailOn);
+  const exitCode = depsExitCode === 1 || auditShouldFail ? 1 : 0;
 
   // ------------------------------------------------------------------
   // 3. Renderizar saída
   // ------------------------------------------------------------------
   if (config.json) {
-    renderJson(result, { pm, root });
+    renderJson(depsResult, auditResult, {
+      pm,
+      root,
+      auditEnabled: config.audit,
+    });
     process.exit(exitCode);
   }
 
-  if (result.counts.critical === 0 && result.counts.regular === 0) {
-    renderAllGood();
+  const hasIssues =
+    depsResult.counts.critical > 0 ||
+    depsResult.counts.regular > 0 ||
+    (config.audit && auditResult.counts.total > 0);
+
+  if (!hasIssues) {
+    renderAllGood(config.audit, auditResult);
     process.exit(0);
   }
 
-  renderReport(result, { pm });
+  renderReport(depsResult, auditResult, {
+    pm,
+    auditEnabled: config.audit,
+    auditWarning,
+  });
 
   // ------------------------------------------------------------------
-  // 4. Modo CI: apenas reportar e sair
+  // 4. Modo CI / --no-update
   // ------------------------------------------------------------------
   if (config.ci || config.noUpdate) {
     process.exit(exitCode);
@@ -72,27 +105,33 @@ export async function run(config, cwd) {
   // ------------------------------------------------------------------
   // 5. Prompt interativo
   // ------------------------------------------------------------------
-  const choice = await askUpdateChoice(result);
+  const choice = await askUpdateChoice(depsResult, auditResult, config.audit);
 
   if (!choice || choice === "ignore") {
     console.log("");
-    console.log("  Nenhuma atualização realizada.\n");
-    // O usuário foi informado e escolheu conscientemente ignorar:
-    // sair com 0 para não bloquear o script seguinte (ex: dev, build).
-    // Exit 1 só faz sentido em modo CI/--no-update, onde não há escolha.
+    console.log("  Nenhuma alteração realizada.\n");
     process.exit(0);
   }
 
   // ------------------------------------------------------------------
-  // 6. Executar atualização
+  // 6. Executar ação escolhida
   // ------------------------------------------------------------------
+  console.log("");
+
+  if (choice === "audit-fix") {
+    const success = await runUpdate({ packages: [], pm, root, auditFix: true });
+    process.exit(success ? 0 : 2);
+  }
+
   const packages =
     choice === "critical"
-      ? Object.keys(result.critical)
-      : [...Object.keys(result.critical), ...Object.keys(result.regular)];
+      ? Object.keys(depsResult.critical)
+      : [
+          ...Object.keys(depsResult.critical),
+          ...Object.keys(depsResult.regular),
+        ];
 
-  console.log("");
-  const success = await runUpdate({ packages, pm, root });
+  const success = await runUpdate({ packages, pm, root, auditFix: false });
 
   if (success) {
     console.log("");
