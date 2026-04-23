@@ -1,6 +1,6 @@
 {
   "name": "deps-guard",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Block outdated dependencies before they run your project.",
   "repository": {
     "type": "git",
